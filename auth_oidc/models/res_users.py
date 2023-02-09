@@ -2,6 +2,8 @@
 # Copyright 2021 ACSONE SA/NV <https://acsone.eu>
 # License: AGPL-3.0 or later (http://www.gnu.org/licenses/agpl)
 
+import base64
+from datetime import datetime, timedelta
 import logging
 
 import requests
@@ -9,8 +11,12 @@ import requests
 from odoo import api, models
 from odoo.exceptions import AccessDenied
 from odoo.http import request
-import jwt
-import time
+try:
+    from jose import jwt
+except ImportError:
+    logging.getLogger(__name__).debug("jose library not installed")
+
+import os
 _logger = logging.getLogger(__name__)
 
 
@@ -21,21 +27,30 @@ class ResUsers(models.Model):
         # https://openid.net/specs/openid-connect-core-1_0.html#ImplicitAuthResponse
         return params.get("access_token"), params.get("id_token")
 
+
+
+
     def _auth_oauth_get_tokens_auth_code_flow(self, oauth_provider, params):
         # https://openid.net/specs/openid-connect-core-1_0.html#AuthResponse
         code = params.get("code")
         # https://openid.net/specs/openid-connect-core-1_0.html#TokenRequest
         auth = None
-        if oauth_provider.client_secret:
+        if (oauth_provider.client_authentication_method == "client_secret") :
             auth = (oauth_provider.client_id, oauth_provider.client_secret)
-        if(oauth_provider.sign_private_key_jwt):
+        if (oauth_provider.client_authentication_method == "private_key_jwt") :
             private_key_jwt = self.create_private_key_jwt(oauth_provider)
-            scope = ""
-            payload = f'grant_type=client_credentials&scope={scope}&client_assertion_type=urn%3Aietf%3Aparams%3Aoauth%3Aclient-assertion-type%3Ajwt-bearer&client_assertion={private_key_jwt}'
+            payload = dict(
+                client_id=oauth_provider.client_id,
+                client_assertion_type="urn:ietf:params:oauth:client-assertion-type:" + oauth_provider.grant_type,
+                client_assertion=private_key_jwt,
+                grant_type="authorization_code",
+                code=code,
+                code_verifier=oauth_provider.code_verifier,  # PKCE
+                redirect_uri=request.httprequest.url_root + "auth_oauth/signin",
+            )
             response = requests.post(
                 oauth_provider.token_endpoint,
-                data={payload},
-                auth=auth,
+                data=payload
             )
         else:
             response = requests.post(
@@ -54,29 +69,24 @@ class ResUsers(models.Model):
         # https://openid.net/specs/openid-connect-core-1_0.html#TokenResponse
         return response_json.get("access_token"), response_json.get("id_token")
 
-    def create_private_key_jwt(oauth_provider):
+    def create_private_key_jwt(self, oauth_provider):
+        secret=base64.b64decode(oauth_provider.client_private_key).decode()
         client_id = oauth_provider.client_id
-        auth_url = oauth_provider.token_url
-        
-        private_key = {
-                "kty": "EC",
-                "d": "YKczdWXvYgMdTNhW0RNl4mLZU_X9OYGUfBiiqEKCHt4",
-                "use": "sig",
-                "crv": "P-256",
-                "x": "9pJxCuEE4ojs8G03RMHrM7UFxnEXRaj4_crzHMGhihM",
-                "y": "tMJIsglmPcG8kvdBUjBpKWO38kaLSIyAdHQmSktWtE4",
-                "alg": "ES256"
-            }
+        # auth_url = "https://mosip-api-1201-dev.openg2p.mosip.net/v1/idp/oauth/token" 
+        auth_url = oauth_provider.token_endpoint
         token = jwt.encode({
-            'iss': client_id,
-            'sub': client_id,
-            'aud': auth_url,
-            "exp": int(time.time()) + 3600
-        },
-        private_key,
-        algorithm='RS256',
+                'iss': client_id,
+                'sub': client_id,
+                'aud': auth_url,
+                "exp": datetime.utcnow()+ timedelta(hours=1),
+                "iat": datetime.utcnow(),
+            },
+            secret,
+            algorithm='RS256'
         )
-        return token    
+
+        return token
+        
     def _auth_oauth_get_tokens_private_key_jwt(self, oauth_provider, params):
         # https://openid.net/specs/openid-connect-core-1_0.html#AuthResponse
         code = params.get("code")
@@ -92,7 +102,8 @@ class ResUsers(models.Model):
                 code=code,
                 client_assertion_type = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
                 client_assertion="", # TODO
-                redirect_uri=request.httprequest.url_root + "auth_oauth/signin",
+                redirect_uri=oauth_provider.get("redirect_url", None)
+                or request.httprequest.url_root + "auth_oauth/signin",
             ),
             auth=auth,
         )
@@ -108,16 +119,14 @@ class ResUsers(models.Model):
             access_token, id_token = self._auth_oauth_get_tokens_implicit_flow(
                 oauth_provider, params
             )
+
         elif oauth_provider.flow == "id_token_code":
             access_token, id_token = self._auth_oauth_get_tokens_auth_code_flow(
                 oauth_provider, params
             )
-        elif oauth_provider.flow == "private_key_jwt":
-            access_token, id_token = self._auth_oauth_get_tokens_private_key_jwt(
-                oauth_provider, params
-            )
         else:
             return super(ResUsers, self).auth_oauth(provider, params)
+        
         if not access_token:
             _logger.error("No access_token in response.")
             raise AccessDenied()

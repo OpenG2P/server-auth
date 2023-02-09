@@ -4,9 +4,7 @@
 
 import logging
 import secrets
-
 import requests
-
 from odoo import fields, models, tools
 
 try:
@@ -18,6 +16,8 @@ except ImportError:
 class AuthOauthProvider(models.Model):
     _inherit = "auth.oauth.provider"
 
+    redirect_url = fields.Char(required=None)
+    
     flow = fields.Selection(
         [
             ("access_token", "OAuth2"),
@@ -34,6 +34,29 @@ class AuthOauthProvider(models.Model):
         "email at least are mapped. For OpenID Connect user_id is "
         "the sub key in the standard."
     )
+
+    client_authentication_method = fields.Selection(
+        [
+            ("client_secret", "Client Secret"),
+            # ("client_secret_jwt", "Signed Client Secret (JWT)"), 
+            ("private_key_jwt", "Private Key JWT")
+        ],
+        string="Client Authentication Method",
+        required=True,
+        default="client_secret",
+    )
+    grant_type = fields.Selection(
+        [
+            ("jwt-bearer", "JWT Bearer")
+        ],
+        string="Grant Type",
+        required=False,
+        default="jwt-bearer"
+    )
+
+
+    client_private_key = fields.Binary(string="Private Key")
+     
     client_secret = fields.Char(
         help="Used in OpenID Connect authorization code flow for confidential clients.",
     )
@@ -77,6 +100,7 @@ class AuthOauthProvider(models.Model):
                 algorithms=["RS256"],
                 audience=self.client_id,
                 access_token=access_token,
+                options={"verify_at_hash": False},
             )
         )
 
