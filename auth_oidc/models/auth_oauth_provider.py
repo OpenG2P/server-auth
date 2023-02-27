@@ -4,7 +4,9 @@
 
 import logging
 import secrets
+
 import requests
+
 from odoo import fields, models, tools
 
 try:
@@ -16,8 +18,6 @@ except ImportError:
 class AuthOauthProvider(models.Model):
     _inherit = "auth.oauth.provider"
 
-    redirect_url = fields.Char(required=None)
-    
     flow = fields.Selection(
         [
             ("access_token", "OAuth2"),
@@ -38,29 +38,23 @@ class AuthOauthProvider(models.Model):
     client_authentication_method = fields.Selection(
         [
             ("client_secret", "Client Secret"),
-            # ("client_secret_jwt", "Signed Client Secret (JWT)"), 
-            ("private_key_jwt", "Private Key JWT")
+            # ("client_secret_jwt", "Signed Client Secret (JWT)"),
+            ("private_key_jwt", "Private Key JWT"),
         ],
-        string="Client Authentication Method",
         required=True,
         default="client_secret",
     )
-    grant_type = fields.Selection(
-        [
-            ("jwt-bearer", "JWT Bearer")
-        ],
-        string="Grant Type",
+    assertion_type = fields.Selection(
+        [("jwt-bearer", "JWT Bearer")],
         required=False,
-        default="jwt-bearer"
+        default="jwt-bearer",
     )
 
-
     client_private_key = fields.Binary(string="Private Key")
-     
+
     client_secret = fields.Char(
         help="Used in OpenID Connect authorization code flow for confidential clients.",
     )
-    sign_private_key_jwt = fields.Boolean(help="")
 
     code_verifier = fields.Char(
         default=lambda self: secrets.token_urlsafe(32), help="Used for PKCE."
@@ -70,6 +64,11 @@ class AuthOauthProvider(models.Model):
         string="Token URL", help="Required for OpenID Connect authorization code flow."
     )
     jwks_uri = fields.Char(string="JWKS URL", help="Required for OpenID Connect.")
+
+    extra_authorize_params = fields.Text(
+        help="Extra Parameters to be passed to Auth endpoint. "
+        'To be given as JSON. Example: {"param":"value"}',
+    )
 
     @tools.ormcache("self.jwks_uri", "kid")
     def _get_key(self, kid):

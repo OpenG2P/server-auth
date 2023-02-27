@@ -6,9 +6,6 @@
         <field name="inherit_id" ref="auth_oauth.view_oauth_provider_form" />
         <field name="arch" type="xml">
             <field name="name" position="after">
-                <field name="redirect_url" />
-            </field>
-            <field name="name" position="after">
                 <field name="flow" />
                 <field
                     name="token_map"
@@ -17,14 +14,26 @@
             </field>
             <field name="client_id" position="after">
                 <field name="client_authentication_method" />
-                <field name="client_secret" attrs="{'invisible': [('client_authentication_method','!=','client_secret')]}"  />
-                <field name="client_private_key" attrs="{'invisible': [('client_authentication_method','!=','private_key_jwt')]}" />
-                <field name="grant_type" attrs="{'invisible': [('client_authentication_method','!=','private_key_jwt')]}" />
+                <field
+                    name="client_secret"
+                    attrs="{'invisible': [('client_authentication_method','!=','client_secret')]}"
+                />
+                <field
+                    name="client_private_key"
+                    attrs="{'invisible': [('client_authentication_method','!=','private_key_jwt')]}"
+                />
+                <field
+                    name="assertion_type"
+                    attrs="{'invisible': [('client_authentication_method','!=','private_key_jwt')]}"
+                />
             </field>
-           
+
             <field name="validation_endpoint" position="after">
                 <field name="token_endpoint" />
                 <field name="jwks_uri" />
+            </field>
+            <field name="data_endpoint" position="after">
+                <field name="extra_authorize_params" />
             </field>
         </field>
     </record>
