@@ -4,6 +4,7 @@
 
 import base64
 import hashlib
+import json
 import logging
 import secrets
 
@@ -43,6 +44,12 @@ class OpenIDLogin(OAuthLogin):
                     if "openid" not in provider["scope"].split():
                         _logger.error("openid connect scope must contain 'openid'")
                     params["scope"] = provider["scope"]
+
+                # extra authorize parameters
+                extra_auth_params = provider.get("extra_authorize_params", "{}")
+                if extra_auth_params:
+                    params.update(json.loads(extra_auth_params))
+
                 # auth link that the user will click
                 provider["auth_link"] = "{}?{}".format(
                     provider["auth_endpoint"], url_encode(params)
