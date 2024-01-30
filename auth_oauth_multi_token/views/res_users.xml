@@ -15,6 +15,7 @@
                         name="oauth_access_token_ids"
                         nolabel="1"
                         options="{'no_create': True, 'no_open': True}"
+                        colspan="2"
                     >
                         <tree limit="10">
                             <field name="create_date" />
@@ -25,6 +26,7 @@
                         type="object"
                         name="action_oauth_clear_token"
                         class="oe_highlight"
+                        title="Clear tokens"
                     />
                 </group>
             </xpath>

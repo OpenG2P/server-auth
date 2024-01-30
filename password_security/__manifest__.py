@@ -5,7 +5,7 @@
 {
     "name": "Password Security",
     "summary": "Allow admin to set password security requirements.",
-    "version": "15.0.1.1.1",
+    "version": "17.0.1.0.0",
     "author": "LasLabs, "
     "Kaushal Prajapati, "
     "Tecnativa, "
@@ -17,7 +17,7 @@
         "auth_signup",
         "auth_password_policy_signup",
     ],
-    "website": "https://github.com/OCA/server-auth",
+    "website": "https://openg2p.org",
     "external_dependencies": {
         "python": ["zxcvbn"],
     },

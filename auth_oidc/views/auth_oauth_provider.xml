@@ -16,15 +16,15 @@
                 <field name="client_authentication_method" />
                 <field
                     name="client_secret"
-                    attrs="{'invisible': [('client_authentication_method','!=','client_secret')]}"
+                    invisible="client_authentication_method != 'client_secret'"
                 />
                 <field
                     name="client_private_key"
-                    attrs="{'invisible': [('client_authentication_method','!=','private_key_jwt')]}"
+                    invisible="client_authentication_method != 'private_key_jwt'"
                 />
                 <field
                     name="assertion_type"
-                    attrs="{'invisible': [('client_authentication_method','!=','private_key_jwt')]}"
+                    invisible="client_authentication_method != 'private_key_jwt'"
                 />
             </field>
 

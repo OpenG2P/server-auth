@@ -23,8 +23,8 @@ def MockRequest(env):
 
 
 class TestAuthOIDCAuthorizationCodeFlow(common.HttpCase):
-    def setUp(self):
-        super().setUp()
+    def setUpClass(self):
+        super().setUpClass()
         # search our test provider and bind the demo user to it
         self.provider_rec = self.env["auth.oauth.provider"].search(
             [("client_id", "=", "auth_oidc-test")]

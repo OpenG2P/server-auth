@@ -3,9 +3,9 @@
 {
     "name": "Verify email at signup",
     "summary": "Force uninvited users to use a good email for signup",
-    "version": "15.0.1.0.0",
+    "version": "17.0.1.0.0",
     "category": "Authentication",
-    "website": "https://github.com/OCA/server-auth",
+    "website": "https://openg2p.org",
     "author": "Antiun Ingeniería S.L., "
     "Tecnativa, "
     "Odoo Community Association (OCA)",
