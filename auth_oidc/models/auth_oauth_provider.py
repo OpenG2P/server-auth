@@ -50,7 +50,7 @@ class AuthOauthProvider(models.Model):
         default="jwt-bearer",
     )
 
-    client_private_key = fields.Binary(string="Private Key")
+    client_private_key = fields.Binary(string="Private Key", attachment=False)
 
     client_secret = fields.Char(
         help="Used in OpenID Connect authorization code flow for confidential clients.",
