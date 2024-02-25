@@ -2,7 +2,6 @@
 # Copyright 2021 ACSONE SA/NV <https://acsone.eu>
 # License: AGPL-3.0 or later (http://www.gnu.org/licenses/agpl)
 
-import base64
 import logging
 from datetime import datetime, timedelta
 
@@ -65,7 +64,7 @@ class ResUsers(models.Model):
         return response_json.get("access_token"), response_json.get("id_token")
 
     def create_private_key_jwt(self, oauth_provider):
-        secret = base64.b64decode(oauth_provider.client_private_key).decode()
+        secret = oauth_provider.with_context(bin_size=False).client_private_key
         client_id = oauth_provider.client_id
         auth_url = oauth_provider.token_endpoint
         token = jwt.encode(
