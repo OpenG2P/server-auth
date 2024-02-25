@@ -116,7 +116,7 @@ class AuthOauthProvider(models.Model):
         verify_at_hash = (
             self.env["ir.config_parameter"]
             .sudo()
-            .get_param("auth_oidc.verify_at_hash", False)
+            .get_param("auth_oidc.verify_at_hash", True)
         )
         for key in keys:
             try:
