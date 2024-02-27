@@ -116,8 +116,8 @@ class AuthOauthProvider(models.Model):
         verify_at_hash = (
             self.env["ir.config_parameter"]
             .sudo()
-            .get_param("auth_oidc.verify_at_hash", True)
-        )
+            .get_param("auth_oidc.verify_at_hash", "True")
+        ) != "False"
         for key in keys:
             try:
                 values = jwt.decode(
