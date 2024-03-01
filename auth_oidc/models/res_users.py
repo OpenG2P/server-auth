@@ -65,7 +65,9 @@ class ResUsers(models.Model):
         return response_json.get("access_token"), response_json.get("id_token")
 
     def create_private_key_jwt(self, oauth_provider):
-        secret = base64.b64decode(oauth_provider.client_private_key).decode()
+        secret = base64.b64decode(
+            oauth_provider.with_context(bin_size=False).client_private_key
+        )
         client_id = oauth_provider.client_id
         auth_url = oauth_provider.token_endpoint
         token = jwt.encode(
@@ -103,7 +105,12 @@ class ResUsers(models.Model):
             raise AccessDenied()
         validation = oauth_provider._parse_id_token(id_token, access_token)
         # required check
-        if not validation.get("user_id"):
+        if "sub" in validation and "user_id" not in validation:
+            # set user_id for auth_oauth, user_id is not an OpenID Connect standard
+            # claim:
+            # https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
+            validation["user_id"] = validation["sub"]
+        elif not validation.get("user_id"):
             _logger.error("user_id claim not found in id_token (after mapping).")
             raise AccessDenied()
         # retrieve and sign in user
