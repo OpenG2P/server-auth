@@ -10,40 +10,14 @@ import secrets
 
 from werkzeug.urls import url_decode, url_encode
 
-from odoo.http import request
-
 from odoo.addons.auth_oauth.controllers.main import OAuthLogin
 
 _logger = logging.getLogger(__name__)
 
 
 class OpenIDLogin(OAuthLogin):
-    def list_providers_oauth(self, domain=None):
-        if not domain:
-            domain = [("enabled", "=", True)]
-        try:
-            providers = request.env["auth.oauth.provider"].sudo().search_read(domain)
-        except Exception:
-            providers = []
-        for provider in providers:
-            return_url = request.httprequest.url_root + "auth_oauth/signin"
-            state = self.get_state(provider)
-            params = dict(
-                response_type="token",
-                client_id=provider["client_id"],
-                redirect_uri=return_url,
-                scope=provider["scope"],
-                state=json.dumps(state),
-                # nonce=base64.urlsafe_b64encode(os.urandom(16)),
-            )
-            provider["auth_link"] = "%s?%s" % (
-                provider["auth_endpoint"],
-                url_encode(params),
-            )
-        return providers
-
-    def list_providers(self, domain=None):
-        providers = self.list_providers_oauth(domain)
+    def list_providers(self):
+        providers = super(OpenIDLogin, self).list_providers()
         for provider in providers:
             flow = provider.get("flow")
             if flow in ("id_token", "id_token_code"):
